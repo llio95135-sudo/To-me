@@ -1,0 +1,1966 @@
+<!doctype html>
+
+<html lang="zh-Hant">
+
+<head>
+
+  <meta charset="utf-8" />
+
+  <title>排班系統（To me）</title>
+
+
+
+  <!-- FullCalendar -->
+
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet" />
+
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+
+
+
+  <style>
+
+    body{font-family:system-ui, "Noto Sans TC";margin:0;background:#f5f7fb;color:#111}
+
+    header{background:#0b74ff;color:#fff;padding:12px 16px;display:flex;align-items:center}
+
+    header h1{margin:0;font-size:18px}
+
+    .wrap{display:flex;gap:16px;padding:16px}
+
+    .left{width:320px}
+
+    .card{background:#fff;padding:12px;border-radius:10px;box-shadow:0 1px 6px rgba(10,20,40,0.06);margin-bottom:12px}
+
+    input,select,button,textarea{width:100%;padding:8px;border-radius:8px;border:1px solid #e6e9ef;box-sizing:border-box}
+
+    button{background:#0b74ff;color:white;border:none;padding:8px;border-radius:8px;cursor:pointer}
+
+    .muted{color:#666;font-size:13px}
+
+    #calendar{flex:1}
+
+    .green{background:#4CAF50}
+
+    .blue{background:#2196F3}
+
+    .row{display:flex;gap:8px}
+
+    .small{font-size:13px;color:#666}
+
+    .danger{background:#ff4d4f}
+
+    .tag{display:inline-block;padding:4px 8px;border-radius:999px;background:#eef3ff;color:#0b74ff;margin-right:6px;font-size:12px}
+
+    /* Buttons and badges */
+    .btn{background:#0b74ff;color:#fff;border:none;padding:8px;border-radius:8px;cursor:pointer}
+    .btn-small{padding:6px 8px;border-radius:6px;background:#eef3ff;color:#0b74ff;border:1px solid #d9e4ff}
+    .badge{display:inline-block;padding:4px 8px;border-radius:999px;background:rgba(255,255,255,0.15);color:#fff;font-size:12px;margin-left:8px}
+
+    /* Mobile responsive */
+    @media (max-width: 600px) {
+      .wrap{flex-direction:column}
+      .left{width:100%}
+      #calendar{width:100%;order:2}
+      #mobileAddBtn{display:inline-block}
+      header h1{font-size:16px}
+      .card{padding:10px}
+      .row{flex-direction:row}
+    }
+
+    /* Mobile form style */
+    #mobileForm{max-width:520px;margin:0 auto}
+    #mobileForm .mf-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+    #mobileForm .mf-close{background:transparent;border:none;font-size:18px;color:#666;cursor:pointer}
+    #mobileForm label{margin-top:6px;display:block}
+    #mobileForm input, #mobileForm select{width:100%;}
+
+    /* Modal animations */
+    .overlay, #mobileForm{transition:opacity .22s ease, transform .22s ease;opacity:0}
+    .overlay{display:none;align-items:center;justify-content:center}
+    .overlay.show{display:flex;opacity:1}
+    #mobileForm{display:none;transform:translateY(10px) scale(.98);border-radius:10px}
+    #mobileForm.show{display:block;opacity:1;transform:translateY(0) scale(1)}
+    .modal-box{transform:translateY(8px) scale(.98);opacity:0;transition:transform .2s ease, opacity .2s ease}
+    .overlay.show .modal-box, #mobileForm.show .modal-box{transform:translateY(0) scale(1);opacity:1}
+    .hint{font-size:12px;color:#666;margin-top:4px}
+
+  </style>
+
+</head>
+
+<body>
+
+
+
+<header><h1>排班系統（To me）</h1><div style="margin-left:auto" id="userInfo" class="small"></div></header>
+
+<!-- Mobile quick-add button (hidden on desktop via CSS) -->
+<div style="position:fixed;right:14px;bottom:18px;z-index:60">
+  <button id="mobileAddBtn" style="display:none;padding:10px 14px;border-radius:999px;background:#0b74ff;color:#fff;border:none;box-shadow:0 2px 8px rgba(0,0,0,0.15)">+ 新增</button>
+</div>
+
+
+
+<div class="wrap">
+
+  <div class="left">
+
+    <div class="card" id="authCard">
+
+      <div id="authForms">
+
+        <h3>登入 / 註冊</h3>
+
+        <label>帳號</label><input id="email" placeholder="email@example.com" />
+
+        <label>密碼</label><input id="password" type="password" />
+
+        <div class="row" style="margin-top:8px">
+
+          <button id="btnLogin">登入</button>
+
+        </div>
+
+        <div class="small" style="margin-top:8px">只有主管帳號可以註冊新帳號。請聯繫主管協助註冊。</div>
+
+      </div>
+
+
+
+      <div id="registerForm" style="display:none">
+
+        <h3>註冊</h3>
+
+        <label>姓名</label><input id="regName" />
+
+        <label>帳號</label><input id="regEmail" />
+
+        <label>密碼</label><input id="regPassword" type="password" />
+
+        <div class="row" style="margin-top:8px">
+
+          <button id="btnRegister">註冊</button>
+
+          <button id="btnShowLogin" class="small">回登入</button>
+
+        </div>
+
+      </div>
+
+
+
+      <div id="afterLogin" style="display:none">
+
+        <div class="small">你已登入：<strong id="meName"></strong>（<span id="meRole"></span>）</div>
+
+        <div style="margin-top:8px" class="row">
+
+          <button id="btnLogout" class="small">登出</button>
+
+          <button id="btnReload" class="small">重整事件</button>
+
+        </div>
+
+      </div>
+
+    </div>
+
+
+
+    <div class="card">
+
+      <h3>說明</h3>
+
+      <div class="small">
+
+        - 員工可拖曳行事曆新增 <span class="tag">可上班（綠）</span><br>
+
+        - 主管可拖曳新增 <span class="tag">班次（藍）</span><br>
+
+        - 新增/編輯時會檢查：是否在 availability、是否與其他班次衝突、是否超時、是否跨天。<br>
+
+        - 員工可點班次申請換班或請假（Requests），主管可在 Requests 面板審核。
+
+      </div>
+
+    </div>
+
+
+
+    <div class="card" id="requestsCard">
+
+      <h3>Requests（換班/請假）</h3>
+
+      <div id="reqList" class="small muted">請先登入以查看或送出申請</div>
+
+    </div>
+
+
+
+    <div class="card" id="adminCard" style="display:none">
+
+      <h3>Admin 操作</h3>
+
+      <div class="small">（管理員可在此查看所有使用者/升級 role/創建帳號）</div>
+
+      <div id="createUserForm" style="margin-top:12px;padding:8px;background:#f8f9fa;border-radius:6px;display:none">
+
+        <h4 style="margin-top:0;font-size:14px">創建新帳號</h4>
+
+        <label style="font-size:12px">姓名</label><input id="newUserName" style="margin-bottom:6px" />
+
+        <label style="font-size:12px">Email</label><input id="newUserEmail" style="margin-bottom:6px" />
+
+        <label style="font-size:12px">密碼</label><input id="newUserPassword" type="password" style="margin-bottom:6px" />
+
+        <label style="font-size:12px">角色</label>
+
+        <select id="newUserRole" style="margin-bottom:6px">
+
+          <option value="employee">employee</option>
+
+          <option value="manager">manager</option>
+
+          <option value="admin">admin</option>
+
+        </select>
+
+        <div class="row">
+
+          <button id="btnCreateUser" class="small">創建帳號</button>
+
+          <button id="btnCancelCreate" class="small">取消</button>
+
+        </div>
+
+      </div>
+
+      <div style="margin-top:8px">
+
+        <button id="btnShowCreateUser" class="small" style="margin-bottom:8px">+ 創建新帳號</button>
+
+      </div>
+
+      <div id="adminUsers" style="margin-top:8px"></div>
+
+    </div>
+
+  </div>
+
+
+
+  <div id="calendar" class="card" style="padding:8px">
+
+    <div id="fc"></div>
+
+  </div>
+
+</div>
+
+
+
+<!-- Mobile create/edit modal -->
+<div id="mobileForm" style="display:none;position:fixed;left:8px;right:8px;bottom:8px;background:#fff;border-radius:10px;z-index:80;padding:12px;box-shadow:0 6px 18px rgba(0,0,0,0.2)" aria-hidden="true">
+  <div class="mf-header"><h4 style="margin:0">新增項目（手機）</h4><button class="mf-close" id="mfClose">✕</button></div>
+  <label>類型</label>
+  <select id="mfType">
+    <option value="availability">可上班（員工）</option>
+    <option value="shift">班次（主管）</option>
+  </select>
+  <label>開始</label>
+  <input id="mfStart" type="datetime-local" />
+  <label>結束</label>
+  <input id="mfEnd" type="datetime-local" />
+  <label id="mfEmailLabel">員工 Email（班次用）</label>
+  <input id="mfEmail" placeholder="email@example.com" />
+  <div class="hint">僅在建立班次時使用，輸入員工註冊的 email</div>
+  <div class="row" style="margin-top:8px">
+    <button id="mfCreate" class="btn">建立</button>
+    <button id="mfCancel" class="btn-small">取消</button>
+  </div>
+</div>
+
+<!-- App logic -->
+
+<!-- Desktop centered form modal -->
+<div id="deskFormOverlay" class="overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:200;">
+  <div id="deskForm" class="modal-box" style="background:#fff;border-radius:10px;padding:16px;min-width:320px;max-width:560px;margin:auto;box-shadow:0 8px 30px rgba(0,0,0,0.25)">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <h3 id="deskFormTitle" style="margin:0;font-size:16px">建立項目</h3>
+      <button id="deskClose" style="background:transparent;border:none;font-size:18px;cursor:pointer">✕</button>
+    </div>
+    <label>類型</label>
+    <select id="dfType">
+      <option value="availability">可上班（員工）</option>
+      <option value="shift">班次（主管）</option>
+    </select>
+    <label>開始</label>
+    <input id="dfStart" type="datetime-local" />
+    <label>結束</label>
+    <input id="dfEnd" type="datetime-local" />
+    <label id="dfEmailLabel">員工 Email（班次用）</label>
+    <input id="dfEmail" placeholder="email@example.com" />
+    <div style="margin-top:10px;display:flex;gap:8px">
+      <button id="dfSave" class="btn">儲存</button>
+      <button id="dfCancel" class="btn-small">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- Event action modal -->
+<div id="eventActionOverlay" class="overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:200;">
+  <div class="modal-box" style="background:#fff;border-radius:10px;padding:12px;min-width:280px;max-width:520px;margin:auto;box-shadow:0 8px 30px rgba(0,0,0,0.25)">
+    <h4 id="eaTitle" style="margin:0 0 8px 0">事件</h4>
+    <div id="eaBody" class="small muted" style="margin-bottom:8px"></div>
+    <div id="eaButtons" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+    <div style="margin-top:8px;text-align:right"><button id="eaClose" class="btn-small">關閉</button></div>
+  </div>
+</div>
+
+<script>
+
+  // ------------------ LocalStorage 數據管理 ------------------
+
+  const storage = {
+
+    users: 'schedule_users',
+
+    shifts: 'schedule_shifts',
+
+    availabilities: 'schedule_availabilities',
+
+    requests: 'schedule_requests',
+
+    currentUser: 'schedule_current_user'
+
+  };
+
+
+
+  function getData(key) {
+
+    const data = localStorage.getItem(key);
+
+    return data ? JSON.parse(data) : [];
+
+  }
+
+  function setData(key, data) {
+
+    localStorage.setItem(key, JSON.stringify(data));
+
+  }
+
+  function generateId() {
+
+    return Date.now().toString(36) + Math.random().toString(36).substr(2);
+
+  }
+
+  // ------------------ Initialize default admin account ------------------
+
+  function initDefaultAdmin(){
+
+    const users = getData(storage.users);
+
+    // 檢查是否已存在 Admin 帳號
+
+    const adminExists = users.find(u => u.email === 'Admin');
+
+    if(!adminExists){
+
+      const adminUser = {
+
+        id: generateId(),
+
+        name: 'Admin',
+
+        email: 'Admin',
+
+        password: 'Admin',
+
+        role: 'admin',
+
+        createdAt: new Date().toISOString()
+
+      };
+
+      users.push(adminUser);
+
+      setData(storage.users, users);
+
+    }
+
+  }
+
+  // 初始化預設 admin 帳號
+
+  initDefaultAdmin();
+
+
+
+  // ------------------ UI 元件 ------------------
+
+  const el = id => document.getElementById(id);
+
+  const btnLogin = el('btnLogin');
+
+  const btnLogout = el('btnLogout'), btnReload = el('btnReload');
+
+  const authForms = el('authForms'), registerForm = el('registerForm'), afterLogin = el('afterLogin');
+
+  const meName = el('meName'), meRole = el('meRole'), userInfo = el('userInfo');
+
+  const reqList = el('reqList'), adminCard = el('adminCard'), adminUsers = el('adminUsers');
+
+  const createUserForm = el('createUserForm'), btnShowCreateUser = el('btnShowCreateUser'), btnCreateUser = el('btnCreateUser'), btnCancelCreate = el('btnCancelCreate');
+  // Mobile helpers
+  const mobileAddBtn = el('mobileAddBtn');
+  const mobileFormEl = el('mobileForm');
+  const mfType = el('mfType'), mfStart = el('mfStart'), mfEnd = el('mfEnd'), mfEmail = el('mfEmail'), mfCreate = el('mfCreate'), mfCancel = el('mfCancel');
+
+  function isMobileMode(){ return window.innerWidth <= 640 || (navigator.maxTouchPoints && navigator.maxTouchPoints > 0); }
+  function toLocalDatetimeInput(dt){ if(!dt) return ''; const d = new Date(dt); const pad = n=>String(n).padStart(2,'0'); const yyyy=d.getFullYear(); const mm=pad(d.getMonth()+1); const dd=pad(d.getDate()); const hh=pad(d.getHours()); const min=pad(d.getMinutes()); return `${yyyy}-${mm}-${dd}T${hh}:${min}`; }
+
+  function refreshMobileUI(){ if(mobileAddBtn) mobileAddBtn.style.display = isMobileMode() ? 'inline-block' : 'none'; }
+  window.addEventListener('resize', refreshMobileUI);
+  refreshMobileUI();
+
+  if(mobileAddBtn) mobileAddBtn.onclick = ()=> openMobileForm();
+
+  function openMobileForm(opts={}){
+    if(!mobileFormEl) return alert('手機表單尚未就緒');
+    const current = getCurrentUser();
+    const role = current ? current.role : 'employee';
+    // default type: if manager allow shift otherwise availability
+    // show/hide shift option depending on role
+    if(mfType){
+      if(role === 'manager' || role === 'admin'){
+        mfType.innerHTML = '<option value="availability">可上班（員工）</option><option value="shift">班次（主管）</option>';
+      } else {
+        mfType.innerHTML = '<option value="availability">可上班（員工）</option>';
+      }
+      mfType.value = (opts.type && mfType.querySelector(`option[value="${opts.type}"]`)) ? opts.type : mfType.options[0].value;
+    }
+    mfStart.value = opts.start ? toLocalDatetimeInput(opts.start) : toLocalDatetimeInput(new Date());
+    mfEnd.value = opts.end ? toLocalDatetimeInput(opts.end) : toLocalDatetimeInput(new Date(new Date().getTime()+1000*60*60*8));
+    mfEmail.value = opts.email || '';
+    // show/hide email
+    mfEmail.style.display = mfType.value === 'shift' ? 'block' : 'none';
+    document.getElementById('mfEmailLabel').style.display = mfType.value === 'shift' ? 'block' : 'none';
+    // animate show
+    showModal(mobileFormEl);
+  }
+
+  if(mfType) mfType.onchange = ()=>{
+    if(!mfEmail) return; mfEmail.style.display = mfType.value === 'shift' ? 'block' : 'none'; document.getElementById('mfEmailLabel').style.display = mfType.value === 'shift' ? 'block' : 'none';
+  };
+
+  if(mfCancel) mfCancel.onclick = ()=>{ if(mobileFormEl) hideModal(mobileFormEl); };
+  const mfClose = el('mfClose');
+  if(mfClose) mfClose.onclick = ()=>{ if(mobileFormEl) hideModal(mobileFormEl); };
+
+  if(mfCreate) mfCreate.onclick = ()=>{
+    const type = mfType.value; const s = mfStart.value; const e = mfEnd.value; if(!s||!e) return alert('請填開始與結束時間');
+    const startIso = new Date(s).toISOString(); const endIso = new Date(e).toISOString();
+    const current = getCurrentUser(); if(!current) return alert('請先登入');
+    if(type === 'availability'){
+      const avails = getData(storage.availabilities);
+      avails.push({ id: generateId(), employeeId: current.id, start: startIso, end: endIso, createdAt: new Date().toISOString() });
+      setData(storage.availabilities, avails);
+      hideModal(mobileFormEl); loadEvents(); alert('已建立可上班時間');
+      return;
+    }
+    // shift
+    const email = mfEmail.value.trim(); if(!email) return alert('請輸入員工 email');
+    // Permission check: only manager/admin can create shifts
+    if(!(current.role === 'manager' || current.role === 'admin')){
+      return alert('只有主管/管理員可以建立班次');
+    }
+    const target = findUserByEmail(email);
+    if(!target) return alert('找不到該員工');
+    const shiftObj = { employeeId: target.id, start: startIso, end: endIso };
+    const ok = validateShiftBeforeWrite(shiftObj);
+    if(!ok) return;
+    const shifts = getData(storage.shifts);
+    shifts.push({ id: generateId(), employeeId: target.id, start: startIso, end: endIso, type:'normal', status:'active', createdBy: current.id, createdAt: new Date().toISOString() });
+    setData(storage.shifts, shifts);
+    hideModal(mobileFormEl); loadEvents(); alert('已建立班次');
+  };
+
+  // modal show/hide helpers
+  function showModal(el){
+    if(!el) return; el.style.display = (el.id === 'mobileForm') ? 'block' : 'flex';
+    // force reflow then add show
+    void el.offsetWidth; el.classList.add('show'); el.setAttribute('aria-hidden','false');
+  }
+  function hideModal(el){
+    if(!el) return; el.classList.remove('show'); el.setAttribute('aria-hidden','true');
+    const done = ()=>{ el.style.display = 'none'; el.removeEventListener('transitionend', done); };
+    el.addEventListener('transitionend', done);
+  }
+
+  // ------------------ Desktop deskForm handlers ------------------
+  const deskOverlay = el('deskFormOverlay');
+  const dfType = el('dfType'), dfStart = el('dfStart'), dfEnd = el('dfEnd'), dfEmail = el('dfEmail');
+  const dfSave = el('dfSave'), dfCancel = el('dfCancel'), deskClose = el('deskClose'), deskTitle = el('deskFormTitle');
+  let deskState = null; // {mode: 'create'|'edit', col, docId}
+
+  function openDeskForm(opts={}){
+    if(!deskOverlay) return alert('表單尚未就緒');
+    const current = getCurrentUser(); if(!current) return alert('請先登入');
+    const role = current.role || 'employee';
+    // control shift option visibility
+    if(dfType){
+      if(role === 'manager' || role === 'admin'){
+        dfType.innerHTML = '<option value="availability">可上班（員工）</option><option value="shift">班次（主管）</option>';
+      } else {
+        dfType.innerHTML = '<option value="availability">可上班（員工）</option>';
+      }
+    }
+    // set values
+    dfType.value = opts.type && dfType.querySelector(`option[value="${opts.type}"]`) ? opts.type : dfType.options[0].value;
+    dfStart.value = opts.start ? toLocalDatetimeInput(opts.start) : toLocalDatetimeInput(new Date());
+    dfEnd.value = opts.end ? toLocalDatetimeInput(opts.end) : toLocalDatetimeInput(new Date(new Date().getTime()+1000*60*60*8));
+    dfEmail.value = opts.email || '';
+    document.getElementById('dfEmailLabel').style.display = dfType.value === 'shift' ? 'block' : 'none';
+    deskState = { mode: opts.mode || 'create', col: opts.col || null, docId: opts.docId || null };
+    deskTitle.textContent = deskState.mode === 'edit' ? '編輯項目' : '建立項目';
+    showModal(deskOverlay);
+  }
+
+  if(deskClose) deskClose.onclick = ()=>{ hideModal(deskOverlay); deskState = null; };
+  if(dfCancel) dfCancel.onclick = ()=>{ hideModal(deskOverlay); deskState = null; };
+
+  if(dfSave) dfSave.onclick = ()=>{
+    const type = dfType.value; const s = dfStart.value; const e = dfEnd.value; if(!s||!e) return alert('請填開始與結束時間');
+    const startIso = new Date(s).toISOString(), endIso = new Date(e).toISOString();
+    const current = getCurrentUser(); if(!current) return alert('請先登入');
+    // create
+    if(deskState && deskState.mode === 'create'){
+      if(type === 'availability'){
+        const avails = getData(storage.availabilities);
+        avails.push({ id: generateId(), employeeId: current.id, start: startIso, end: endIso, createdAt: new Date().toISOString() });
+        setData(storage.availabilities, avails);
+        deskOverlay.style.display = 'none'; loadEvents(); alert('已建立可上班時間');
+        deskState = null; return;
+      }
+      // shift creation requires manager/admin
+      if(!(current.role === 'manager' || current.role === 'admin')) return alert('只有主管/管理員可以建立班次');
+      const email = dfEmail.value.trim(); if(!email) return alert('請輸入員工 email');
+      const target = findUserByEmail(email); if(!target) return alert('找不到該員工');
+      const shiftObj = { employeeId: target.id, start: startIso, end: endIso };
+      const ok = validateShiftBeforeWrite(shiftObj);
+      if(!ok) return;
+      const shifts = getData(storage.shifts);
+      shifts.push({ id: generateId(), employeeId: target.id, start: startIso, end: endIso, type:'normal', status:'active', createdBy: current.id, createdAt: new Date().toISOString() });
+      setData(storage.shifts, shifts);
+      deskOverlay.style.display = 'none'; loadEvents(); alert('已建立班次'); deskState = null; return;
+    }
+    // edit
+    if(deskState && deskState.mode === 'edit'){
+      if(deskState.col === 'shifts'){
+        const shifts = getData(storage.shifts);
+        const idx = shifts.findIndex(s => s.id === deskState.docId);
+        if(idx < 0) return alert('找不到班次');
+        const shift = { employeeId: shifts[idx].employeeId, start: startIso, end: endIso };
+        const ok = validateShiftBeforeWrite(shift, deskState.docId);
+        if(!ok) return;
+        shifts[idx].start = startIso; shifts[idx].end = endIso; setData(storage.shifts, shifts); deskOverlay.style.display='none'; loadEvents(); alert('班次已更新'); deskState = null; return;
+      }
+      if(deskState.col === 'availabilities'){
+        const avails = getData(storage.availabilities);
+        const idx = avails.findIndex(a => a.id === deskState.docId);
+        if(idx < 0) return alert('找不到可上班時間');
+        avails[idx].start = startIso; avails[idx].end = endIso; setData(storage.availabilities, avails); deskOverlay.style.display='none'; loadEvents(); alert('可上班時間已更新'); deskState = null; return;
+      }
+    }
+  };
+
+  // ------------------ Event action modal logic ------------------
+  const eaOverlay = el('eventActionOverlay'), eaTitle = el('eaTitle'), eaBody = el('eaBody'), eaButtons = el('eaButtons'), eaClose = el('eaClose');
+  if(eaClose) eaClose.onclick = ()=>{ if(eaOverlay) hideModal(eaOverlay); eaButtons.innerHTML=''; };
+
+  function openEventAction(p, ev){
+    const current = getCurrentUser(); if(!current) return alert('請先登入');
+    const isManager = current.role === 'manager' || current.role === 'admin';
+    eaButtons.innerHTML = '';
+    if(p.col === 'shifts'){
+      const shift = getData(storage.shifts).find(s=>s.id===p.docId);
+      const owner = getData(storage.users).find(u=>u.id===p.employeeId);
+      eaTitle.textContent = `[班次] ${owner ? owner.name : p.employeeId}`;
+      eaBody.innerHTML = `<div>開始：${new Date(shift.start).toLocaleString()}</div><div>結束：${new Date(shift.end).toLocaleString()}</div>`;
+      const isOwner = p.employeeId === current.id;
+      if(isOwner){
+        // swap: show input + button
+        const swapInput = document.createElement('input'); swapInput.placeholder='換給誰 email'; swapInput.style.width='180px';
+        const swapBtn = document.createElement('button'); swapBtn.className='btn-small'; swapBtn.textContent='申請換班'; swapBtn.onclick = ()=>{ const to = swapInput.value.trim(); if(!to) return alert('請輸入 email'); createSwapRequest(p.docId, current.id, to); };
+        eaButtons.appendChild(swapInput); eaButtons.appendChild(swapBtn);
+        const leaveBtn = document.createElement('button'); leaveBtn.className='btn-small'; leaveBtn.textContent='申請請假'; leaveBtn.onclick = ()=>{ createLeaveRequest(p.docId, current.id); };
+        eaButtons.appendChild(leaveBtn);
+        const editBtn = document.createElement('button'); editBtn.className='btn'; editBtn.textContent='編輯時間'; editBtn.onclick = ()=>{ openDeskForm({ mode:'edit', col:'shifts', docId: p.docId, start: new Date(shift.start), end: new Date(shift.end) }); if(eaOverlay) eaOverlay.style.display='none'; };
+        eaButtons.appendChild(editBtn);
+        const delBtn = document.createElement('button'); delBtn.className='btn-small'; delBtn.textContent='刪除'; delBtn.onclick = ()=>{ if(confirm('確定要刪除此班次？')){ deleteShift(p.docId); if(eaOverlay) eaOverlay.style.display='none'; } };
+        eaButtons.appendChild(delBtn);
+      } else if(isManager){
+        const editBtn = document.createElement('button'); editBtn.className='btn'; editBtn.textContent='編輯時間'; editBtn.onclick = ()=>{ openDeskForm({ mode:'edit', col:'shifts', docId: p.docId, start: new Date(shift.start), end: new Date(shift.end) }); if(eaOverlay) eaOverlay.style.display='none'; };
+        eaButtons.appendChild(editBtn);
+        const delBtn = document.createElement('button'); delBtn.className='btn-small'; delBtn.textContent='刪除'; delBtn.onclick = ()=>{ if(confirm('確定要刪除此班次？')){ deleteShift(p.docId); if(eaOverlay) eaOverlay.style.display='none'; } };
+        eaButtons.appendChild(delBtn);
+      } else {
+        eaBody.innerHTML += '<div class="small">你不是此班次的員工，也無權限操作</div>';
+      }
+    } else if(p.col === 'availabilities'){
+      const avail = getData(storage.availabilities).find(a=>a.id===p.docId);
+      const owner = getData(storage.users).find(u=>u.id===p.employeeId);
+      eaTitle.textContent = '[可上班] ' + (owner ? owner.name : p.employeeId);
+      eaBody.innerHTML = `<div>開始：${new Date(avail.start).toLocaleString()}</div><div>結束：${new Date(avail.end).toLocaleString()}</div>`;
+      const isOwner = p.employeeId === current.id;
+      if(isOwner || isManager){
+        const editBtn = document.createElement('button'); editBtn.className='btn'; editBtn.textContent='編輯時間'; editBtn.onclick = ()=>{ openDeskForm({ mode:'edit', col:'availabilities', docId: p.docId, start: new Date(avail.start), end: new Date(avail.end) }); if(eaOverlay) eaOverlay.style.display='none'; };
+        eaButtons.appendChild(editBtn);
+        const delBtn = document.createElement('button'); delBtn.className='btn-small'; delBtn.textContent='刪除'; delBtn.onclick = ()=>{ if(confirm('確定要刪除此可上班時間？')){ deleteAvailability(p.docId); if(eaOverlay) eaOverlay.style.display='none'; } };
+        eaButtons.appendChild(delBtn);
+      } else {
+        eaBody.innerHTML += '<div class="small">你無權限操作此可上班時間</div>';
+      }
+    }
+    if(eaOverlay) showModal(eaOverlay);
+  }
+
+  // 檢查必要的元素是否存在
+
+  if(!btnLogin){
+
+    console.error('找不到登入按鈕元素');
+
+    alert('系統初始化錯誤：找不到登入按鈕');
+
+  }
+
+
+
+  // ------------------ Auth: register / login ------------------
+
+
+
+  // 只有主管可以創建帳號
+
+  btnShowCreateUser.onclick = ()=>{
+
+    createUserForm.style.display = createUserForm.style.display === 'none' ? 'block' : 'none';
+
+  };
+
+  btnCancelCreate.onclick = ()=>{
+
+    createUserForm.style.display = 'none';
+
+    el('newUserName').value = '';
+
+    el('newUserEmail').value = '';
+
+    el('newUserPassword').value = '';
+
+    el('newUserRole').value = 'employee';
+
+  };
+
+  btnCreateUser.onclick = ()=>{
+
+    const current = getCurrentUser();
+
+    if(!current || (current.role !== 'admin' && current.role !== 'manager')){
+
+      alert('只有主管可以創建帳號');
+
+      return;
+
+    }
+
+    const name = el('newUserName').value.trim();
+
+    const email = el('newUserEmail').value.trim();
+
+    const pw = el('newUserPassword').value;
+
+    const role = el('newUserRole').value;
+
+    if(!name||!email||!pw) return alert('請填完整');
+
+    const users = getData(storage.users);
+
+    if(users.find(u => u.email === email)) return alert('此 email 已註冊');
+
+    const newUser = {
+
+      id: generateId(),
+
+      name,
+
+      email,
+
+      password: pw, // 簡單存儲，實際應用應加密
+
+      role: role || 'employee',
+
+      createdAt: new Date().toISOString()
+
+    };
+
+    users.push(newUser);
+
+    setData(storage.users, users);
+
+    alert('帳號創建成功');
+
+    el('newUserName').value = '';
+
+    el('newUserEmail').value = '';
+
+    el('newUserPassword').value = '';
+
+    el('newUserRole').value = 'employee';
+
+    createUserForm.style.display = 'none';
+
+    renderAdminUsers();
+
+  };
+
+
+
+  btnLogin.onclick = ()=>{
+
+    try{
+
+      const email = el('email').value.trim(), pw = el('password').value;
+
+      if(!email||!pw) return alert('請填完整');
+
+      const users = getData(storage.users);
+
+      const user = users.find(u => u.email === email && u.password === pw);
+
+      if(!user) return alert('登入失敗：email 或密碼錯誤');
+
+      setData(storage.currentUser, user);
+
+      el('email').value=''; el('password').value='';
+
+      updateAuthUI(user);
+
+    }catch(e){
+
+      console.error('登入錯誤：', e);
+
+      alert('登入時發生錯誤：' + e.message);
+
+    }
+
+  };
+
+
+
+  btnLogout.onclick = ()=>{
+
+    localStorage.removeItem(storage.currentUser);
+
+    updateAuthUI(null);
+
+  };
+
+
+
+  // ------------------ Calendar init (FullCalendar) ------------------
+
+  let calendar;
+
+  function initCalendar(){ 
+
+    const calendarEl = document.getElementById('fc');
+    const mobileMode = isMobileMode();
+
+    calendar = new FullCalendar.Calendar(calendarEl, {
+
+      initialView:'timeGridWeek',
+
+      editable: !mobileMode,
+
+      selectable: true,
+
+      height: 650,
+
+      headerToolbar: { left:'prev,next today', center:'title', right:'timeGridWeek,timeGridDay,listWeek' },
+
+      select: function(info){
+
+        // 判斷角色：如果是 manager 則建立 shift，否則建立 availability
+
+        const user = getCurrentUser();
+
+        if(!user) return alert('請先登入');
+
+        const role = user.role || 'employee';
+
+        if(mobileMode){
+          // open mobile form prefilled
+          openMobileForm({ start: info.start, end: info.end, type: (role === 'manager' || role === 'admin') ? 'shift' : 'availability' });
+          calendar.unselect();
+          return;
+        }
+
+        if(role === 'manager' || role === 'admin'){
+          // open desktop form to create shift
+          openDeskForm({ mode: 'create', type: 'shift', start: info.start, end: info.end });
+          calendar.unselect();
+          return;
+        } else {
+          // open desktop form to create availability for employee
+          openDeskForm({ mode: 'create', type: 'availability', start: info.start, end: info.end });
+          calendar.unselect();
+          return;
+        }
+
+        calendar.unselect();
+
+      },
+
+
+
+      eventDrop: function(info){
+
+        // event moved: update the localStorage data
+
+        const ev = info.event;
+
+        const props = ev.extendedProps;
+
+        if(!props.docId || !props.col) { info.revert(); return; }
+
+        const current = getCurrentUser();
+
+        if(!current) { info.revert(); return; }
+
+        const isManager = current.role === 'manager' || current.role === 'admin';
+
+        // 權限檢查：員工只能移動自己的班次/availability，主管可以移動任何
+
+        if(!isManager && props.employeeId !== current.id){
+
+          alert('你無權限移動此項目');
+
+          info.revert();
+
+          return;
+
+        }
+
+        // create a temp object representing the new shift and validate
+
+        const newObj = { 
+
+          employeeId: props.employeeId,
+
+          start: ev.start.toISOString(),
+
+          end: ev.end.toISOString()
+
+        };
+
+        if(props.col === 'shifts'){
+
+          const ok = validateShiftBeforeWrite(newObj, props.docId);
+
+          if(!ok){ alert('調整後衝突或不在 availability'); info.revert(); return; }
+
+        }
+
+        if(props.col === 'shifts'){
+
+          const shifts = getData(storage.shifts);
+
+          const idx = shifts.findIndex(s => s.id === props.docId);
+
+          if(idx >= 0){
+
+            shifts[idx].start = ev.start.toISOString();
+
+            shifts[idx].end = ev.end.toISOString();
+
+            setData(storage.shifts, shifts);
+
+          }
+
+        } else if(props.col === 'availabilities'){
+
+          const avails = getData(storage.availabilities);
+
+          const idx = avails.findIndex(a => a.id === props.docId);
+
+          if(idx >= 0){
+
+            avails[idx].start = ev.start.toISOString();
+
+            avails[idx].end = ev.end.toISOString();
+
+            setData(storage.availabilities, avails);
+
+          }
+
+        }
+
+      },
+
+
+
+      eventResize: function(info){
+
+        const ev = info.event; const props = ev.extendedProps;
+
+        if(!props.docId || !props.col) { info.revert(); return; }
+
+        const current = getCurrentUser();
+
+        if(!current) { info.revert(); return; }
+
+        const isManager = current.role === 'manager' || current.role === 'admin';
+
+        // 權限檢查：員工只能調整自己的班次/availability，主管可以調整任何
+
+        if(!isManager && props.employeeId !== current.id){
+
+          alert('你無權限調整此項目');
+
+          info.revert();
+
+          return;
+
+        }
+
+        if(props.col === 'shifts'){
+
+          const newObj = { employeeId: props.employeeId, start: ev.start.toISOString(), end: ev.end.toISOString() };
+
+          const ok = validateShiftBeforeWrite(newObj, props.docId);
+
+          if(!ok){ alert('調整後衝突或不在 availability'); info.revert(); return; }
+
+        }
+
+        if(props.col === 'shifts'){
+
+          const shifts = getData(storage.shifts);
+
+          const idx = shifts.findIndex(s => s.id === props.docId);
+
+          if(idx >= 0){
+
+            shifts[idx].start = ev.start.toISOString();
+
+            shifts[idx].end = ev.end.toISOString();
+
+            setData(storage.shifts, shifts);
+
+          }
+
+        } else if(props.col === 'availabilities'){
+
+          const avails = getData(storage.availabilities);
+
+          const idx = avails.findIndex(a => a.id === props.docId);
+
+          if(idx >= 0){
+
+            avails[idx].start = ev.start.toISOString();
+
+            avails[idx].end = ev.end.toISOString();
+
+            setData(storage.availabilities, avails);
+
+          }
+
+        }
+
+      },
+
+
+
+      eventClick: function(info){
+
+        const ev = info.event; const p = ev.extendedProps;
+        openEventAction(p, ev);
+
+      }
+
+    });
+
+    calendar.render();
+
+  }
+
+
+
+  // ------------------ Load events from localStorage ------------------
+
+  function loadEvents(){
+
+    if(!calendar) return;
+
+    const current = getCurrentUser();
+
+    if(!current) return;
+
+    // remove all existing events
+
+    calendar.getEvents().forEach(e => e.remove());
+
+    const users = getData(storage.users);
+
+    const role = current.role || 'employee';
+
+    const isManager = role === 'manager' || role === 'admin';
+
+    // shifts - 員工只能看到自己的，主管可以看到所有
+
+    const shifts = getData(storage.shifts);
+
+    shifts.forEach(d => {
+
+      if(d.status === 'canceled') return;
+
+      // 如果是員工，只顯示自己的班次
+
+      if(!isManager && d.employeeId !== current.id) return;
+
+      const employee = users.find(u => u.id === d.employeeId);
+
+      calendar.addEvent({
+
+        id: 's_'+d.id,
+
+        title: '[班] ' + (employee ? employee.name : d.employeeId),
+
+        start: d.start,
+
+        end: d.end,
+
+        backgroundColor: '#2196F3',
+
+        borderColor: '#1976D2',
+
+        extendedProps: { col: 'shifts', docId: d.id, employeeId: d.employeeId }
+
+      });
+
+    });
+
+
+
+    // availabilities - 員工只能看到自己的，主管可以看到所有
+
+    const avails = getData(storage.availabilities);
+
+    avails.forEach(d => {
+
+      // 如果是員工，只顯示自己的 availability
+
+      if(!isManager && d.employeeId !== current.id) return;
+
+      const employee = users.find(u => u.id === d.employeeId);
+
+      calendar.addEvent({
+
+        id: 'a_'+d.id,
+
+        title: '[可上班]' + (isManager && employee ? ' - ' + employee.name : ''),
+
+        start: d.start,
+
+        end: d.end,
+
+        backgroundColor: '#4CAF50',
+
+        borderColor: '#2E7D32',
+
+        extendedProps: { col: 'availabilities', docId: d.id, employeeId: d.employeeId }
+
+      });
+
+    });
+
+  }
+
+
+
+  // ------------------ Utility: find user by email ------------------
+
+  function findUserByEmail(email){
+
+    const users = getData(storage.users);
+
+    return users.find(u => u.email === email) || null;
+
+  }
+
+  function getCurrentUser(){
+
+    const userData = localStorage.getItem(storage.currentUser);
+
+    return userData ? JSON.parse(userData) : null;
+
+  }
+
+  // ------------------ Delete functions ------------------
+
+  function deleteShift(shiftId){
+
+    const shifts = getData(storage.shifts);
+
+    const idx = shifts.findIndex(s => s.id === shiftId);
+
+    if(idx >= 0){
+
+      shifts.splice(idx, 1);
+
+      setData(storage.shifts, shifts);
+
+      loadEvents();
+
+      alert('班次已刪除');
+
+    }
+
+  }
+
+  function deleteAvailability(availId){
+
+    const avails = getData(storage.availabilities);
+
+    const idx = avails.findIndex(a => a.id === availId);
+
+    if(idx >= 0){
+
+      avails.splice(idx, 1);
+
+      setData(storage.availabilities, avails);
+
+      loadEvents();
+
+      alert('可上班時間已刪除');
+
+    }
+
+  }
+
+  // ------------------ Edit time functions ------------------
+
+  function editShiftTime(shiftId, event){
+
+    const shifts = getData(storage.shifts);
+
+    const shift = shifts.find(s => s.id === shiftId);
+
+    if(!shift) return;
+
+    const currentStart = new Date(shift.start);
+
+    const currentEnd = new Date(shift.end);
+
+    // 格式化顯示當前時間（只顯示時間部分）
+
+    const formatTime = (date) => {
+
+      const hours = String(date.getHours()).padStart(2, '0');
+
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+
+      return `${hours}:${minutes}`;
+
+    };
+
+    // 提示輸入新時間（只輸入時間，日期保持不變）
+
+    const startInput = prompt(`輸入開始時間（格式：HH:mm，例如 09:00）\n當前：${formatTime(currentStart)}`);
+
+    if(!startInput) return;
+
+    const endInput = prompt(`輸入結束時間（格式：HH:mm，例如 17:00）\n當前：${formatTime(currentEnd)}`);
+
+    if(!endInput) return;
+
+    // 解析輸入的時間（HH:mm 格式）
+
+    const parseTime = (timeStr, baseDate) => {
+
+      const timeRegex = /^(\d{1,2}):(\d{2})$/;
+
+      const match = timeStr.match(timeRegex);
+
+      if(!match) return null;
+
+      const hours = parseInt(match[1], 10);
+
+      const minutes = parseInt(match[2], 10);
+
+      if(hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return null;
+
+      const newDate = new Date(baseDate);
+
+      newDate.setHours(hours, minutes, 0, 0);
+
+      return newDate;
+
+    };
+
+    const newStart = parseTime(startInput.trim(), currentStart);
+
+    const newEnd = parseTime(endInput.trim(), currentEnd);
+
+    if(!newStart || !newEnd){
+
+      alert('時間格式錯誤，請使用 HH:mm 格式（例如：09:00 或 14:30）');
+
+      return;
+
+    }
+
+    if(newStart >= newEnd){
+
+      alert('開始時間必須早於結束時間');
+
+      return;
+
+    }
+
+    // 驗證新時間
+
+    const newShiftObj = {
+
+      employeeId: shift.employeeId,
+
+      start: newStart.toISOString(),
+
+      end: newEnd.toISOString()
+
+    };
+
+    const ok = validateShiftBeforeWrite(newShiftObj, shiftId);
+
+    if(!ok) return;
+
+    // 更新時間
+
+    const idx = shifts.findIndex(s => s.id === shiftId);
+
+    if(idx >= 0){
+
+      shifts[idx].start = newStart.toISOString();
+
+      shifts[idx].end = newEnd.toISOString();
+
+      setData(storage.shifts, shifts);
+
+      loadEvents();
+
+      alert('時間已更新');
+
+    }
+
+  }
+
+  function editAvailabilityTime(availId, event){
+
+    const avails = getData(storage.availabilities);
+
+    const avail = avails.find(a => a.id === availId);
+
+    if(!avail) return;
+
+    const currentStart = new Date(avail.start);
+
+    const currentEnd = new Date(avail.end);
+
+    // 格式化顯示當前時間（只顯示時間部分）
+
+    const formatTime = (date) => {
+
+      const hours = String(date.getHours()).padStart(2, '0');
+
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+
+      return `${hours}:${minutes}`;
+
+    };
+
+    // 提示輸入新時間（只輸入時間，日期保持不變）
+
+    const startInput = prompt(`輸入開始時間（格式：HH:mm，例如 09:00）\n當前：${formatTime(currentStart)}`);
+
+    if(!startInput) return;
+
+    const endInput = prompt(`輸入結束時間（格式：HH:mm，例如 17:00）\n當前：${formatTime(currentEnd)}`);
+
+    if(!endInput) return;
+
+    // 解析輸入的時間（HH:mm 格式）
+
+    const parseTime = (timeStr, baseDate) => {
+
+      const timeRegex = /^(\d{1,2}):(\d{2})$/;
+
+      const match = timeStr.match(timeRegex);
+
+      if(!match) return null;
+
+      const hours = parseInt(match[1], 10);
+
+      const minutes = parseInt(match[2], 10);
+
+      if(hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return null;
+
+      const newDate = new Date(baseDate);
+
+      newDate.setHours(hours, minutes, 0, 0);
+
+      return newDate;
+
+    };
+
+    const newStart = parseTime(startInput.trim(), currentStart);
+
+    const newEnd = parseTime(endInput.trim(), currentEnd);
+
+    if(!newStart || !newEnd){
+
+      alert('時間格式錯誤，請使用 HH:mm 格式（例如：09:00 或 14:30）');
+
+      return;
+
+    }
+
+    if(newStart >= newEnd){
+
+      alert('開始時間必須早於結束時間');
+
+      return;
+
+    }
+
+    // 更新時間
+
+    const idx = avails.findIndex(a => a.id === availId);
+
+    if(idx >= 0){
+
+      avails[idx].start = newStart.toISOString();
+
+      avails[idx].end = newEnd.toISOString();
+
+      setData(storage.availabilities, avails);
+
+      loadEvents();
+
+      alert('時間已更新');
+
+    }
+
+  }
+
+
+
+  // ------------------ Requests handling ------------------
+
+  function createSwapRequest(shiftId, fromUid, toEmail){
+
+    const toUser = findUserByEmail(toEmail);
+
+    if(!toUser) return alert('找不到要換班的員工');
+
+    const requests = getData(storage.requests);
+
+    requests.push({
+
+      id: generateId(),
+
+      type:'swap',
+
+      shiftId,
+
+      fromEmployee: fromUid,
+
+      toEmployee: toUser.id,
+
+      reason: '',
+
+      status: 'pending',
+
+      managerId: null,
+
+      createdAt: new Date().toISOString()
+
+    });
+
+    setData(storage.requests, requests);
+
+    alert('換班申請已送出');
+
+    renderRequestsList();
+
+  }
+
+  function createLeaveRequest(shiftId, fromUid){
+
+    const requests = getData(storage.requests);
+
+    requests.push({
+
+      id: generateId(),
+
+      type:'leave',
+
+      shiftId,
+
+      fromEmployee: fromUid,
+
+      toEmployee: null,
+
+      reason: '',
+
+      status:'pending',
+
+      managerId:null,
+
+      createdAt: new Date().toISOString()
+
+    });
+
+    setData(storage.requests, requests);
+
+    alert('請假申請已送出');
+
+    renderRequestsList();
+
+  }
+
+
+
+  // render requests list
+
+  function renderRequestsList(){
+
+    const current = getCurrentUser();
+
+    if(!current) {
+
+      reqList.innerHTML = '<div class="small muted">請先登入以查看或送出申請</div>';
+
+      return;
+
+    }
+
+    const requests = getData(storage.requests);
+
+    const users = getData(storage.users);
+
+    let html = '';
+
+    requests.forEach(d => {
+
+      const fromUser = users.find(u => u.id === d.fromEmployee);
+
+      const toUser = d.toEmployee ? users.find(u => u.id === d.toEmployee) : null;
+
+      html += `<div style="padding:6px;border-bottom:1px solid #f0f2f6">
+
+        <div><strong>${d.type.toUpperCase()}</strong> - ${d.status}</div>
+
+        <div class="small">shift: ${d.shiftId}</div>
+
+        <div class="small">from: ${fromUser ? fromUser.name : d.fromEmployee} to: ${toUser ? toUser.name : (d.toEmployee || '-')}</div>
+
+        <div class="small">created: ${new Date(d.createdAt).toLocaleString()}</div>
+
+        <div style="margin-top:6px">`;
+
+      // actions: if current is owner and pending -> can cancel
+
+      if(d.fromEmployee === current.id && d.status === 'pending'){
+
+        html += `<button class="small" onclick="cancelRequest('${d.id}')">取消</button> `;
+
+      }
+
+      // if current role is manager/admin and pending -> approve/reject
+
+      if((current.role === 'manager' || current.role === 'admin') && d.status === 'pending'){
+
+        html += `<button class="small" onclick="approveRequest('${d.id}')">核准</button> `;
+
+        html += `<button class="small danger" onclick="rejectRequest('${d.id}')">拒絕</button>`;
+
+      }
+
+      html += `</div></div>`;
+
+    });
+
+    reqList.innerHTML = html || '<div class="small muted">目前無申請</div>';
+
+  }
+
+  function cancelRequest(requestId){
+
+    const requests = getData(storage.requests);
+
+    const idx = requests.findIndex(r => r.id === requestId);
+
+    if(idx >= 0){
+
+      requests[idx].status = 'canceled';
+
+      setData(storage.requests, requests);
+
+      renderRequestsList();
+
+    }
+
+  }
+
+  function approveRequest(requestId){
+
+    const requests = getData(storage.requests);
+
+    const idx = requests.findIndex(r => r.id === requestId);
+
+    if(idx >= 0){
+
+      requests[idx].status = 'approved';
+
+      const req = requests[idx];
+
+      // 如果是換班，更新 shift 的 employeeId
+
+      if(req.type === 'swap' && req.toEmployee){
+
+        const shifts = getData(storage.shifts);
+
+        const shiftIdx = shifts.findIndex(s => s.id === req.shiftId);
+
+        if(shiftIdx >= 0){
+
+          shifts[shiftIdx].employeeId = req.toEmployee;
+
+          setData(storage.shifts, shifts);
+
+          loadEvents();
+
+        }
+
+      }
+
+      setData(storage.requests, requests);
+
+      renderRequestsList();
+
+    }
+
+  }
+
+  function rejectRequest(requestId){
+
+    const requests = getData(storage.requests);
+
+    const idx = requests.findIndex(r => r.id === requestId);
+
+    if(idx >= 0){
+
+      requests[idx].status = 'rejected';
+
+      setData(storage.requests, requests);
+
+      renderRequestsList();
+
+    }
+
+  }
+
+  // 將函數暴露到全局以便 onclick 使用
+
+  window.cancelRequest = cancelRequest;
+
+  window.approveRequest = approveRequest;
+
+  window.rejectRequest = rejectRequest;
+
+
+
+  // ------------------ Validation before writing a shift ------------------
+
+  // Checks:
+
+  // 1) start/end same day (no cross-day) - optional
+
+  // 2) duration <= 12 hours (configurable)
+
+  // 3) shift is fully contained in at least one availability of that employee
+
+  // 4) no overlapping shifts for that employee
+
+  function validateShiftBeforeWrite(shiftObj, existingDocId=null){
+
+    // shiftObj: { employeeId, start (ISO), end (ISO) }
+
+    const start = new Date(shiftObj.start);
+
+    const end = new Date(shiftObj.end);
+
+    // 1. cross-day check
+
+    if(start.toDateString() !== end.toDateString()){
+
+      if(!confirm('班次跨天。確定要允許跨天？（按取消會阻擋）')) return false;
+
+    }
+
+    // 2. duration check
+
+    const hours = (end - start)/1000/3600;
+
+    if(hours > 12) { alert('班次過長（超過 12 小時）'); return false; } // 上限可調
+
+    // 3. availability check: find availabilities for employee that include this range
+
+    const avails = getData(storage.availabilities);
+
+    let inside = false;
+
+    avails.forEach(d => {
+
+      if(d.employeeId !== shiftObj.employeeId) return;
+
+      const aStart = new Date(d.start), aEnd = new Date(d.end);
+
+      if(start >= aStart && end <= aEnd) inside = true;
+
+    });
+
+    if(!inside){
+
+      if(!confirm('此班次不在員工的 availability 範圍內。仍然要排此班嗎？（取消會阻擋）')) return false;
+
+    }
+
+    // 4. overlapping shifts
+
+    const shifts = getData(storage.shifts);
+
+    for(const sdoc of shifts){
+
+      if(existingDocId && sdoc.id === existingDocId) continue;
+
+      if(sdoc.employeeId !== shiftObj.employeeId) continue;
+
+      if(sdoc.status === 'canceled') continue;
+
+      const sStart = new Date(sdoc.start), sEnd = new Date(sdoc.end);
+
+      if(start < sEnd && end > sStart){
+
+        alert('發現重疊班次，無法排班');
+
+        return false;
+
+      }
+
+    }
+
+    return true;
+
+  }
+
+
+
+  // ------------------ Update Auth UI ------------------
+
+  function updateAuthUI(user){
+
+    if(user){
+
+      meName.textContent = user.name || user.email;
+
+      meRole.textContent = user.role || 'employee';
+
+      userInfo.innerHTML = `${meName.textContent} <span class="badge">${meRole.textContent}</span>`;
+
+      authForms.style.display='none'; registerForm.style.display='none'; afterLogin.style.display='block';
+
+      adminCard.style.display = user.role === 'admin' ? 'block' : 'none';
+
+      // init calendar after login
+
+      if(!calendar) initCalendar();
+
+      loadEvents();
+
+      renderRequestsList();
+
+      // render admin users if admin
+
+      if(user.role === 'admin') renderAdminUsers();
+
+    } else {
+
+      meName.textContent=''; meRole.textContent=''; userInfo.textContent='';
+
+      authForms.style.display='block'; registerForm.style.display='none'; afterLogin.style.display='none';
+
+      adminCard.style.display='none';
+
+      if(calendar) calendar.destroy(); calendar = null;
+
+    }
+
+  }
+
+  // 檢查是否有已登入的使用者
+
+  const currentUser = getCurrentUser();
+
+  if(currentUser) updateAuthUI(currentUser);
+
+
+
+  // ------------------ Admin: list users ------------------
+
+  function renderAdminUsers(){
+
+    const users = getData(storage.users);
+
+    adminUsers.innerHTML = '';
+
+    users.forEach(d => {
+
+      const div = document.createElement('div');
+
+      div.style.padding='6px'; div.style.borderBottom='1px solid #f0f2f6';
+
+      div.innerHTML = `<div><strong>${d.name}</strong> <span class="small muted">${d.email}</span></div>
+
+        <div class="small">role: ${d.role}</div>`;
+
+      const btnContainer = document.createElement('div');
+
+      btnContainer.style.marginTop='6px';
+
+      btnContainer.style.display='flex';
+
+      btnContainer.style.gap='6px';
+
+      // add upgrade button
+
+      if(d.role !== 'manager' && d.role !== 'admin'){
+
+        const upgradeBtn = document.createElement('button');
+
+        upgradeBtn.textContent = '升級為 manager';
+
+        upgradeBtn.onclick = ()=>{
+
+          const users = getData(storage.users);
+
+          const idx = users.findIndex(u => u.id === d.id);
+
+          if(idx >= 0){
+
+            users[idx].role = 'manager';
+
+            setData(storage.users, users);
+
+            // 更新當前使用者資料（如果是自己）
+
+            const current = getCurrentUser();
+
+            if(current && current.id === d.id){
+
+              current.role = 'manager';
+
+              setData(storage.currentUser, current);
+
+              updateAuthUI(current);
+
+            }
+
+            alert('已升級');
+
+            renderAdminUsers();
+
+          }
+
+        };
+
+        btnContainer.appendChild(upgradeBtn);
+
+      }
+
+      // add delete button (不能刪除自己)
+
+      const current = getCurrentUser();
+
+      if(current && current.id !== d.id){
+
+        const deleteBtn = document.createElement('button');
+
+        deleteBtn.textContent = '刪除帳號';
+
+        deleteBtn.className = 'danger';
+
+        deleteBtn.onclick = ()=>{
+
+          if(confirm(`確定要刪除帳號「${d.name}（${d.email}）」？\n此操作將同時刪除該用戶的所有班次、可上班時間和申請記錄。`)){
+
+            deleteUserAccount(d.id);
+
+          }
+
+        };
+
+        btnContainer.appendChild(deleteBtn);
+
+      }
+
+      if(btnContainer.children.length > 0){
+
+        div.appendChild(btnContainer);
+
+      }
+
+      adminUsers.appendChild(div);
+
+    });
+
+  }
+
+  // ------------------ Delete user account ------------------
+
+  function deleteUserAccount(userId){
+
+    const current = getCurrentUser();
+
+    if(!current || (current.role !== 'admin' && current.role !== 'manager')){
+
+      alert('無權限刪除帳號');
+
+      return;
+
+    }
+
+    // 不能刪除自己
+
+    if(current.id === userId){
+
+      alert('不能刪除自己的帳號');
+
+      return;
+
+    }
+
+    // 刪除用戶
+
+    const users = getData(storage.users);
+
+    const userIdx = users.findIndex(u => u.id === userId);
+
+    if(userIdx < 0){
+
+      alert('找不到該用戶');
+
+      return;
+
+    }
+
+    users.splice(userIdx, 1);
+
+    setData(storage.users, users);
+
+    // 刪除該用戶的所有班次
+
+    const shifts = getData(storage.shifts);
+
+    const filteredShifts = shifts.filter(s => s.employeeId !== userId);
+
+    setData(storage.shifts, filteredShifts);
+
+    // 刪除該用戶的所有可上班時間
+
+    const avails = getData(storage.availabilities);
+
+    const filteredAvails = avails.filter(a => a.employeeId !== userId);
+
+    setData(storage.availabilities, filteredAvails);
+
+    // 刪除該用戶相關的申請（作為申請者或接收者）
+
+    const requests = getData(storage.requests);
+
+    const filteredRequests = requests.filter(r => r.fromEmployee !== userId && r.toEmployee !== userId);
+
+    setData(storage.requests, filteredRequests);
+
+    // 如果該用戶正在登入，強制登出
+
+    const loggedInUser = getCurrentUser();
+
+    if(loggedInUser && loggedInUser.id === userId){
+
+      localStorage.removeItem(storage.currentUser);
+
+      updateAuthUI(null);
+
+    }
+
+    // 重新載入事件和更新 UI
+
+    loadEvents();
+
+    renderRequestsList();
+
+    renderAdminUsers();
+
+    alert('帳號及相關資料已刪除');
+
+  }
+
+
+
+  // ------------------ start ------------------
+
+  // 初始化按鈕事件
+
+  btnReload.onclick = ()=>{
+
+    loadEvents();
+
+    alert('事件已重新載入');
+
+  };
+
+  // 如果已登入，初始化日曆
+
+  if(getCurrentUser()){
+
+    initCalendar();
+
+  }
+
+
+
+</script>
+
+
+
+</body>
+
+</html>
+
